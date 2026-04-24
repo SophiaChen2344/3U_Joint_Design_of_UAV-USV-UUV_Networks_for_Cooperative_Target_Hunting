@@ -2,6 +2,14 @@
 % 输出：Fig3/10/11/12/13/14/15/16 所有图表
 clear; clc; close all;
 addpath(genpath('./uavrepro')); % 加载所有函数
+%% ========== 强制加载所有子文件夹函数（解决函数找不到） ==========
+% 获取当前脚本所在目录
+current_script_dir = fileparts(mfilename('fullpath'));
+% 递归添加所有子文件夹到MATLAB路径
+addpath(genpath(current_script_dir));
+% 验证加载（可选，查看是否找到函数）
+disp('已加载的函数路径：');
+disp(which('ascfc_controller')); % 能显示路径则加载成功
 
 %% ====================== 1. 论文核心参数配置 ======================
 % UAV数量：0(leader)+1-5(follower) 共6架
