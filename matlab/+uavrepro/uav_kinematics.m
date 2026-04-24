@@ -1,5 +1,8 @@
 % 无人机运动学模型：适配6架UAV
 function x_dot = uav_kinematics(x, u, d, params)
+    % 【新增】参数默认值（防止字段缺失）
+    if ~isfield(params, 'mass'), params.mass = 1.0; end
+    
     m = params.mass; 
     if isscalar(m), m = repmat(m,1,params.uav_num); end
     
