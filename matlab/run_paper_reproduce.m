@@ -1,4 +1,4 @@
-% 论文复现主脚本：1:1匹配Fig10-16所有结果
+% 论文复现主脚本：1:1匹配Fig10-16所有结果（修复A矩阵作用域）
 clear; clc; close all;
 
 %% ========== 强制加载所有函数 ==========
@@ -6,8 +6,8 @@ current_script_dir = fileparts(mfilename('fullpath'));
 addpath(genpath(current_script_dir));
 
 %% ====================== 1. 论文精准参数配置 ======================
-params.uav_num = 5; % 论文中UAV1-5（共5架，无leader索引0）
-params.leader_idx = 0; % 无独立leader，拓扑自组织
+params.uav_num = 5; % 论文中UAV1-5（共5架）
+params.leader_idx = 0; 
 params.tau_d = 1;      
 params.sim_time = 80;  
 params.dt = 0.01;      
@@ -78,6 +78,8 @@ A = [
     0 1 0 0 0;
     1 0 0 0 1;
     0 0 0 1 0]; 
+% 将A矩阵加入params，使子函数可访问
+params.A = A;
 
 % 日志初始化（UAV数×时间步数）
 log = struct();
@@ -102,24 +104,26 @@ while t < params.sim_time
         A(1,3) = 1; A(3,1) = 1;
         A(3,4) = 1; A(4,3) = 1;
     end
+    % 更新params中的A矩阵
+    params.A = A;
     
     % 外部扰动
     d = params.disturbance_fun(t);
     d = repmat(d, 1, params.uav_num);
     
-    % 1. ASCFC控制器（渐近收敛：最慢，误差先降后小幅波动）
+    % 1. ASCFC控制器（渐近收敛：最慢，匹配Fig11-12）
     u_ascfc = ascfc_controller(x, A, params);
     x_dot_ascfc = uav_kinematics(x, u_ascfc, d, params);
     x_ascfc = x + x_dot_ascfc * params.dt;
     e_ascfc = calc_formation_error(x_ascfc, params);
     
-    % 2. FICFC控制器（有限时间：中等收敛，误差10s内降到1以下）
+    % 2. FICFC控制器（有限时间：中等收敛，匹配Fig13-14）
     u_ficfc = ficfc_controller(x, A, params);
     x_dot_ficfc = uav_kinematics(x, u_ficfc, d, params);
     x_ficfc = x + x_dot_ficfc * params.dt;
     e_ficfc = calc_formation_error(x_ficfc, params);
     
-    % 3. FXCFC控制器（固定时间：最快收敛，5s内降到0附近）
+    % 3. FXCFC控制器（固定时间：最快收敛，匹配Fig15-16）
     u_fxcfc = fxcfc_controller(x, A, params);
     x_dot_fxcfc = uav_kinematics(x, u_fxcfc, d, params);
     x_fxcfc = x + x_dot_fxcfc * params.dt;
@@ -239,6 +243,9 @@ end
 function e = calc_formation_error(x, params)
 % 计算编队误差（匹配论文初始幅值20，收敛到0）
 e = zeros(2, params.uav_num);
+% 从params中获取A矩阵（核心修复！）
+A = params.A;
+
 for i = 1:params.uav_num
     neighbors = find(A(i,:)==1);
     if isempty(neighbors)
@@ -246,8 +253,8 @@ for i = 1:params.uav_num
         e(2,i) = x(2,i) - params.init_pos(i,2);
     else
         % 误差计算（匹配论文刻度：-20~30）
-        e(1,i) = x(1,i) - mean(x(1:2,neighbors),1) - 0;
-        e(2,i) = x(2,i) - mean(x(1:2,neighbors),2) - 0;
+        e(1,i) = x(1,i) - mean(x(1,neighbors)) - 0;
+        e(2,i) = x(2,i) - mean(x(2,neighbors)) - 0;
     end
 end
 end
