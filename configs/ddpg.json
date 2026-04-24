@@ -1,0 +1,21 @@
+{
+  "algorithm": "DDPG",
+  "paper_formulas": {
+    "state": "(17)",
+    "action_mapping": "(18)",
+    "reward": "(20)-(23)",
+    "critic_update": "(24)-(25), (28)-(29)",
+    "actor_update": "(26)-(27), (30)",
+    "target_update": "(31)"
+  },
+  "gamma": 0.99,
+  "actor_lr": 0.0001,
+  "critic_lr": 0.001,
+  "batch_size": 64,
+  "replay_buffer_size": 100000,
+  "soft_update_tau": 0.005,
+  "warmup_steps": 1000,
+  "exploration_noise_std": 0.1,
+  "episodes": 300,
+  "steps_per_episode": 1600
+}

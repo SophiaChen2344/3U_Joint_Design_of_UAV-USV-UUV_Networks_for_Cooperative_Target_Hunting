@@ -1,0 +1,12 @@
+{
+  "experiment_name": "compare_case",
+  "paper_section": "IV-B",
+  "sampling_time": 0.05,
+  "duration": 40.0,
+  "num_followers": 5,
+  "comparison_methods": ["FXCFC", "FICFC", "ASCFC"],
+  "topology": {
+    "leader_pinning": [1, 0, 0, 0, 0],
+    "description": "fixed_nominal_topology_from_fig_10"
+  }
+}

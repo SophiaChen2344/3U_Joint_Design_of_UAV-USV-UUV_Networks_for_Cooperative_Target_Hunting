@@ -1,0 +1,58 @@
+{
+  "experiment_name": "main_case",
+  "paper_section": "IV-A",
+  "sampling_time": 0.05,
+  "duration": 80.0,
+  "dwell_time": 1.0,
+  "num_followers": 5,
+  "formation": {
+    "description": "regular_pentagon",
+    "radius": 10.0
+  },
+  "leader": {
+    "xdot": 1.5,
+    "ydot_expression": "0.8 * sin(0.1 * t) + 0.2"
+  },
+  "disturbance": {
+    "x_expression": "sin(0.3*t - pi) * cos(pi/10 * cos(0.5*t + pi) + pi/5)",
+    "y_expression": "sin(0.3*t - pi) * sin(pi/10 * cos(0.5*t + pi) + pi/5)"
+  },
+  "controller": {
+    "kappa": 0.05,
+    "alpha_ix": 0.1,
+    "alpha_iy": 0.1,
+    "beta_ix": 0.01,
+    "beta_iy": 0.01,
+    "p_i": 0.5,
+    "m_i": 11,
+    "n_i": 10,
+    "a1": 0.2,
+    "b1": 2.0,
+    "c1": 2,
+    "k1": 5.0
+  },
+  "reward": {
+    "r1": 8.0,
+    "r2": 8.0,
+    "varpi1": 1.0,
+    "varpi2": 1.0
+  },
+  "normalization": {
+    "rho_x": [-0.25, 0.0625, 0.1428571429, -0.1666666667, -0.125],
+    "rho_y": [1.6666666667, 0.1428571429, 0.0769230769, 0.0769230769, 0.1666666667]
+  },
+  "fault_schedule": [
+    {
+      "interval": [20.0, 40.0],
+      "description": "link disruption between UAV1 and UAV3"
+    },
+    {
+      "interval": [40.0, 60.0],
+      "description": "link restored between UAV1 and UAV3"
+    },
+    {
+      "interval": [60.0, 80.0],
+      "description": "intermittent failures between UAV3 and UAV4"
+    }
+  ]
+}

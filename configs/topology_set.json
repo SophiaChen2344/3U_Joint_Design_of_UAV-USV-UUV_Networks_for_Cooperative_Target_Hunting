@@ -1,0 +1,9 @@
+{
+  "paper_section": "IV-A",
+  "description": "candidate_directed_graphs_for_reconfiguration",
+  "todo": [
+    "Fill all adjacency matrices according to Fig. 2 in the paper.",
+    "Record the leader pinning matrix B used in each scenario."
+  ],
+  "topologies": []
+}
