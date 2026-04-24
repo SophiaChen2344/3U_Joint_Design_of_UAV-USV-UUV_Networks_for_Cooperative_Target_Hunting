@@ -19,6 +19,7 @@ params.tau_d = 1;      % dwell time (s)
 params.sim_time = 80;  % 仿真时长80s（匹配论文）
 params.dt = 0.01;      % 仿真步长
 params.sampling_time = 0.05; % DDPG采样时间（Table III）
+params.mass = 1.0;     % 【新增】无人机质量（关键！解决mass字段缺失）
 
 % 初始状态（Table II）
 params.init_pos = [
