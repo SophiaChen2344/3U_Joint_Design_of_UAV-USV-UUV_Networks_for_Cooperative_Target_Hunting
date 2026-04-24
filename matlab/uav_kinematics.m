@@ -1,21 +1,21 @@
-% 无人机运动学模型：实现论文Eq.(6)-(7)的无人机动力学方程
-% 输入：
-%   x: 无人机状态 [位置x, 位置y, 位置z, 速度vx, 速度vy, 速度vz]
-%   u: 控制输入
-%   d: 外部扰动（由USDE估计）
-%   params: 无人机物理参数（质量、惯量等）
-% 输出：
-%   x_dot: 状态导数
+% 无人机运动学模型：适配6架UAV
 function x_dot = uav_kinematics(x, u, d, params)
-    % 论文Eq.(6): 无人机二阶动力学模型
-    % \dot{p} = v
-    % m\dot{v} = u + d (简化版，对齐论文核心逻辑)
-    m = params.mass; % 无人机质量
-    p = x(1:3);
-    v = x(4:6);
+    % 【新增】参数默认值（防止字段缺失）
+    if ~isfield(params, 'mass'), params.mass = 1.0; end
     
-    p_dot = v;
-    v_dot = (u + d) / m;
+    m = params.mass; 
+    if isscalar(m), m = repmat(m,1,params.uav_num); end
     
-    x_dot = [p_dot; v_dot];
+    x_dot = zeros(size(x));
+    for i = 1:params.uav_num
+        p_dot = x(3:4,i); % 速度=位置导数
+        v_dot = (u(1:2,i) + d(1:2,i)) / m(i); % 加速度
+        theta_dot = x(6,i); % 角速度
+        omega_dot = 0; % 简化：角加速度为0
+        
+        x_dot(1:2,i) = p_dot;
+        x_dot(3:4,i) = v_dot;
+        x_dot(5,i) = theta_dot;
+        x_dot(6,i) = omega_dot;
+    end
 end
