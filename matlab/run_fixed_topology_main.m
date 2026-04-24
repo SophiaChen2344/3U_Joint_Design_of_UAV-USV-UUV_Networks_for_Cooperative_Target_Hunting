@@ -1,7 +1,7 @@
 % 固定拓扑无人机编队控制主脚本（复现论文核心实验）
 % 对齐论文：Fixed-Time Networked UAV Topology Reconfiguration With Disturbance Rejection
 clear; clc; close all;
-
+addpath(genpath('./uavrepro'));
 %% 1. 配置参数（可从configs/json导入，此处先内置）
 params = struct();
 % 无人机物理参数
