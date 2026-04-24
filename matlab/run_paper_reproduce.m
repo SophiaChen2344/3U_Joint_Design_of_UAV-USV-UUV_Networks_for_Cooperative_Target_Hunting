@@ -94,12 +94,16 @@ A = [
     0 0 0 0 0 0
 ]; 
 
-% 日志初始化
+% 日志初始化（修复维度：UAV数 × 时间步数）
 log = struct();
 log.time = [];
-log.error_ascfc_ix = []; log.error_ascfc_iy = [];
-log.error_ficfc_ix = []; log.error_ficfc_iy = [];
-log.error_fxcfc_ix = []; log.error_fxcfc_iy = [];
+% 误差日志：行数=UAV数，列数=时间步数（初始为空矩阵）
+log.error_ascfc_ix = zeros(params.uav_num, 0); 
+log.error_ascfc_iy = zeros(params.uav_num, 0);
+log.error_ficfc_ix = zeros(params.uav_num, 0);
+log.error_ficfc_iy = zeros(params.uav_num, 0);
+log.error_fxcfc_ix = zeros(params.uav_num, 0);
+log.error_fxcfc_iy = zeros(params.uav_num, 0);
 log.ddpg_reward = [];
 
 %% ====================== 3. 模拟通信中断场景 ======================
@@ -138,14 +142,14 @@ while t < params.sim_time
     x_fxcfc = x + x_dot_fxcfc * params.dt;
     e_fxcfc = calc_formation_error(x_fxcfc, params);
     
-    % 记录日志
+    % 记录日志（按列存储，每列对应一个时间步的所有UAV误差）
     log.time = [log.time, t];
-    log.error_ascfc_ix = [log.error_ascfc_ix, e_ascfc(1,:)];
-    log.error_ascfc_iy = [log.error_ascfc_iy, e_ascfc(2,:)];
-    log.error_ficfc_ix = [log.error_ficfc_ix, e_ficfc(1,:)];
-    log.error_ficfc_iy = [log.error_ficfc_iy, e_ficfc(2,:)];
-    log.error_fxcfc_ix = [log.error_fxcfc_ix, e_fxcfc(1,:)];
-    log.error_fxcfc_iy = [log.error_fxcfc_iy, e_fxcfc(2,:)];
+    log.error_ascfc_ix = [log.error_ascfc_ix, e_ascfc(1,:)']; % 转置为列向量
+    log.error_ascfc_iy = [log.error_ascfc_iy, e_ascfc(2,:)'];
+    log.error_ficfc_ix = [log.error_ficfc_ix, e_ficfc(1,:)'];
+    log.error_ficfc_iy = [log.error_ficfc_iy, e_ficfc(2,:)'];
+    log.error_fxcfc_ix = [log.error_fxcfc_ix, e_fxcfc(1,:)'];
+    log.error_fxcfc_iy = [log.error_fxcfc_iy, e_fxcfc(2,:)'];
     
     % 状态更新（以FXCFC为例）
     x = x_fxcfc;
