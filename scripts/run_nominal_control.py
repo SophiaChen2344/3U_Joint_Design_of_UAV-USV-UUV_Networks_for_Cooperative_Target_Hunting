@@ -1,24 +1,30 @@
-from __future__ import annotations
+import json
+import os
+import matlab.engine  # 需安装MATLAB Engine for Python
 
-from pathlib import Path
-import sys
+def load_config(config_path):
+    """加载仿真配置"""
+    with open(config_path, 'r') as f:
+        return json.load(f)
 
-ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
-from uav_repro.config import load_json
-from uav_repro.utils.logger import ensure_output_dirs
-
-
-def main() -> None:
-    ensure_output_dirs()
-    cfg = load_json(ROOT / "configs" / "sim_main.json")
-    print("Nominal control scaffold loaded.")
-    print(f"Experiment: {cfg['experiment_name']}")
-    print("Next step: implement FormationEnv and fixed-topology control loop.")
-
+def run_nominal_fixed_topology():
+    """运行标称固定拓扑控制（调用MATLAB引擎）"""
+    # 加载配置
+    config = load_config("../configs/sim_main.json")
+    
+    # 启动MATLAB引擎
+    eng = matlab.engine.start_matlab()
+    eng.cd(os.path.join(os.getcwd(), "../matlab"), nargout=0)
+    
+    # 传递参数到MATLAB（可选，替代MATLAB内置参数）
+    eng.workspace['uav_num'] = config['uav_params']['uav_num']
+    eng.workspace['sim_time'] = config['sim_params']['sim_time']
+    
+    # 运行MATLAB主脚本
+    eng.run_fixed_topology_main(nargout=0)
+    eng.quit()
+    
+    print("Nominal fixed topology control simulation completed!")
 
 if __name__ == "__main__":
-    main()
+    run_nominal_fixed_topology()

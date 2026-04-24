@@ -74,4 +74,40 @@ for idx = 1:min(10, numel(order))
         r.final_mean_abs_error, ...
         r.oscillation_penalty, ...
         r.alignment_score);
+        % 参数扫描：验证控制器增益k对收敛时间的影响
+clear; clc;
+
+% 扫描的k值范围
+k_list = [3, 5, 7, 10];
+convergence_time = zeros(size(k_list));
+params = struct();
+% 基础参数（同run_fixed_topology_main）
+params.mass = 1.0; params.uav_num = 4; params.topology_type = 'ring';
+params.usde_k1 = 10; params.usde_k2 = 5; params.usde_gamma = 8;
+params.alpha = 0.8; params.beta = 1.2; params.p = 1/2; params.q = 2;
+params.sim_time = 10; params.dt = 0.01;
+params.desired_formation = [1 0 -1 0; 0 1 0 -1; 0 0 0 0];
+
+% 逐参数仿真
+for idx = 1:length(k_list)
+    params.k = k_list(idx);
+    % 调用主仿真逻辑（简化版）
+    [~, sim_log] = run_fixed_topology_core(params); % 需抽离run_fixed_topology_main的核心逻辑为函数
+    % 计算收敛时间（误差<0.01）
+    e_norm = norm(sim_log.e_form);
+    convergence_time(idx) = find(e_norm < 0.01, 1) * params.dt;
+end
+
+% 绘图
+figure;
+plot(k_list, convergence_time, 'o-');
+xlabel('Controller Gain k');
+ylabel('Convergence Time (s)');
+title('Convergence Time vs Controller Gain');
+grid on;
+savefig('../outputs/param_sweep_k.fig');
+
+% 保存扫描结果
+save('../outputs/param_sweep_results.mat', 'k_list', 'convergence_time');
+disp('Parameter sweep completed! Results saved to outputs/');
 end

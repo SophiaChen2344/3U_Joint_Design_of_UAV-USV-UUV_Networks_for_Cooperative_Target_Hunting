@@ -17,5 +17,13 @@
   "warmup_steps": 1000,
   "exploration_noise_std": 0.1,
   "episodes": 300,
-  "steps_per_episode": 1600
+  "steps_per_episode": 1600,
+  "gamma": 0.99,
+  "tau": 0.005,
+  "lr_actor": 0.001,
+  "lr_critic": 0.002,
+  "memory_capacity": 100000,
+  "batch_size": 64,
+  "state_dim": 10,
+  "action_dim": 3
 }
