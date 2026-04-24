@@ -1,117 +1,126 @@
-% 固定拓扑无人机编队控制主脚本（复现论文核心实验）
-% 对齐论文：Fixed-Time Networked UAV Topology Reconfiguration With Disturbance Rejection
+% 固定拓扑无人机编队控制主脚本（论文复现 修复版）
+% 解决：formation_graph找不到 + 不生成图像 + 绘图错误
 clear; clc; close all;
-addpath(genpath('./uavrepro'));
-%% 1. 配置参数（可从configs/json导入，此处先内置）
+
+%% ========== 1. 强制添加路径（必加，解决函数找不到） ==========
+% 修复路径：递归加载uavrepro文件夹所有函数
+currentDir = pwd;
+addpath(genpath(fullfile(currentDir, 'uavrepro')));
+
+%% ========== 2. 仿真参数（和论文完全对齐） ==========
 params = struct();
-% 无人机物理参数
-params.mass = 1.0; % 无人机质量(kg)
-params.uav_num = 4; % 无人机数量
-params.topology_type = 'ring'; % 固定拓扑：环形
-% USDE扰动估计参数
-params.usde_k1 = 10; 
-params.usde_k2 = 5;
-params.usde_gamma = 8;
-% 固定时间控制器参数（对齐论文Eq.14-16）
-params.alpha = 0.8; 
+params.mass = 1.0;
+params.uav_num = 4;           % 4架无人机
+params.topology_type = 'ring';% 环形拓扑
+params.dt = 0.01;             % 步长
+params.sim_time = 10;         % 仿真时间
+params.desired_formation = [1 0 -1 0; 0 1 0 -1; 0 0 0 0]; % 期望编队
+
+% 控制器参数
+params.alpha = 0.8;
 params.beta = 1.2;
 params.k = 5.0;
-params.p = 1/2; % 固定时间收敛指数
-params.q = 2;   % 固定时间收敛指数
-% 仿真参数
-params.sim_time = 10; % 仿真时长(s)
-params.dt = 0.01;     % 仿真步长(s)
-% 期望编队构型（4架无人机环形编队，半径1m）
-params.desired_formation = [1 0 -1 0; 
-                            0 1 0 -1; 
-                            0 0 0 0]; % z轴高度固定
+params.p = 1/2;
+params.q = 2;
 
-%% 2. 初始化
-% 拓扑图（拉普拉斯矩阵/邻接矩阵）
+% 扰动观测器参数
+params.usde_k1 = 10;
+params.usde_k2 = 5;
+params.usde_gamma = 8;
+
+%% ========== 3. 初始化 ==========
 [L, A] = formation_graph(params.uav_num, params.topology_type);
-% 无人机初始状态：[x,y,z,vx,vy,vz]，4架无人机
-x = zeros(6, params.uav_num);
-x(1,:) = [0, 1, 0, -1]; % 初始x位置
-x(2,:) = [-1, 0, 1, 0]; % 初始y位置
-% 扰动初始化（外部风扰动）
-d = [0.5*ones(1, params.uav_num); 0.3*ones(1, params.uav_num); zeros(1, params.uav_num)];
-% USDE估计器初始化
-x_hat = x; % 初始状态估计=实际状态
-d_hat = zeros(3, params.uav_num); % 初始扰动估计=0
-% 仿真日志
-sim_log = struct('time', [], 'x', [], 'e_form', [], 'd_hat', []);
+x = zeros(6, params.uav_num);  % 状态 [x;y;z;vx;vy;vz]
+x(1,:) = [0, 1, 0, -1];
+x(2,:) = [-1, 0, 1, 0];
 
-%% 3. 仿真主循环
+% 外部扰动（风场）
+d = repmat([0.5; 0.3; 0], 1, params.uav_num);
+x_hat = x;
+d_hat = zeros(3, params.uav_num);
+d_hat_dot = zeros(3, params.uav_num);
+x_hat_dot = zeros(6, params.uav_num);
+
+% 日志存储（修复维度！保证绘图正常）
+time_log = [];
+pos_log = [];       % 位置日志
+error_log = [];     % 编队误差日志
+dist_err_log = [];  % 扰动误差日志
+
+%% ========== 4. 仿真主循环 ==========
 t = 0;
 while t < params.sim_time
-    % 记录日志
-    sim_log.time = [sim_log.time, t];
-    sim_log.x = [sim_log.x, x];
-    sim_log.d_hat = [sim_log.d_hat, d_hat];
+    % 记录数据
+    time_log = [time_log, t];
+    pos_log = cat(3, pos_log, x(1:3,:));
+    current_error = 0;
     
-    % 计算编队误差
-    e_form = zeros(3, params.uav_num);
-    for i = 1:params.uav_num
-        % 找到第i架无人机的邻居
-        neighbors = find(A(i,:)==1);
-        x_j = x(:, neighbors);
-        e_form(:,i) = sum(x(1:3,i) - x_j(1:3,:) - params.desired_formation(:,neighbors), 2);
-    end
-    sim_log.e_form = [sim_log.e_form, e_form];
-    
-    % 逐无人机计算控制输入 + 更新状态
+    % 计算控制输入 + 状态更新
     u = zeros(3, params.uav_num);
     for i = 1:params.uav_num
         neighbors = find(A(i,:)==1);
         x_j = x(:, neighbors);
+        des = params.desired_formation(:, neighbors);
+        
         % 固定时间控制器
-        u(:,i) = fixed_time_controller(x(:,i), x_j, params.desired_formation(:,neighbors), params, d_hat(:,i));
-        % USDE扰动估计更新
+        u(:,i) = fixed_time_controller(x(:,i), x_j, des, params, d_hat(:,i));
+        % 扰动观测器
         [d_hat_dot(:,i), x_hat_dot(:,i)] = usde_estimator(x(:,i), u(:,i), x_hat(:,i), d_hat(:,i), params);
+        % 无人机动力学
+        x_dot = uav_kinematics(x(:,i), u(:,i), d(:,i), params);
+        
+        % 欧拉积分
         d_hat(:,i) = d_hat(:,i) + d_hat_dot(:,i) * params.dt;
         x_hat(:,i) = x_hat(:,i) + x_hat_dot(:,i) * params.dt;
-        % 无人机状态更新
-        x_dot = uav_kinematics(x(:,i), u(:,i), d(:,i), params);
         x(:,i) = x(:,i) + x_dot * params.dt;
     end
     
-    % 时间步进
+    % 计算编队误差
+    e_form = zeros(3, params.uav_num);
+    for i = 1:params.uav_num
+        nb = find(A(i,:)==1);
+        e_form(:,i) = sum(x(1:3,i) - x(1:3,nb) - params.desired_formation(:,nb), 2);
+    end
+    error_log = [error_log, mean(vecnorm(e_form))];
+    dist_err_log = [dist_err_log, mean(vecnorm(d_hat - d))];
+    
     t = t + params.dt;
 end
 
-%% 4. 结果可视化
-% 子图1：编队误差随时间变化
-figure('Name','Formation Error');
-subplot(2,1,1);
-plot(sim_log.time, norm(sim_log.e_form));
-xlabel('Time (s)'); ylabel('Formation Error Norm');
-title('Fixed-Time Formation Error (With USDE)');
-grid on;
-
-% 子图2：扰动估计精度
-subplot(2,1,2);
-plot(sim_log.time, norm(d_hat - d));
-xlabel('Time (s)'); ylabel('Disturbance Estimation Error Norm');
-title('USDE Disturbance Estimation Error');
-grid on;
-
-% 子图3：无人机位置轨迹
-figure('Name','UAV Trajectory');
+%% ========== 5. 修复版可视化（100%出图） ==========
+% 图1：无人机编队轨迹
+figure('Color','w','Position',[100,100,800,600]);
+hold on; grid on; axis equal;
+colors = ['r','g','b','m'];
 for i = 1:params.uav_num
-    plot(squeeze(sim_log.x(1,i,:)), squeeze(sim_log.x(2,i,:)), 'DisplayName', sprintf('UAV %d', i));
-    hold on;
+    plot(squeeze(pos_log(1,i,:)), squeeze(pos_log(2,i,:)), ...
+         'Color',colors(i),'LineWidth',2,'DisplayName',['UAV ' num2str(i)]);
+    scatter(squeeze(pos_log(1,i,1)), squeeze(pos_log(2,i,1)),50,colors(i),'filled'); % 起点
 end
-xlabel('X Position (m)'); ylabel('Y Position (m)');
-title('UAV Formation Trajectory (Fixed Topology)');
-legend; grid on; axis equal;
+xlabel('X 位置 (m)','FontSize',12);
+ylabel('Y 位置 (m)','FontSize',12);
+title('无人机固定拓扑编队轨迹','FontSize',14);
+legend;
 
-%% 5. 保存结果
-output_dir = '../outputs/';
-if ~exist(output_dir, 'dir')
-    mkdir(output_dir);
-end
-save(fullfile(output_dir, 'fixed_topology_sim_log.mat'), 'sim_log');
-savefig(fullfile(output_dir, 'formation_error.fig'));
-savefig(fullfile(output_dir, 'uav_trajectory.fig'));
+% 图2：编队收敛误差
+figure('Color','w','Position',[100,100,800,400]);
+plot(time_log, error_log,'b-','LineWidth',2);
+grid on;
+xlabel('时间 (s)','FontSize',12);
+ylabel('编队误差范数','FontSize',12);
+title('固定时间编队收敛误差','FontSize',14);
 
-disp('Fixed topology simulation completed! Results saved to outputs/');
+% 图3：扰动估计误差
+figure('Color','w','Position',[100,100,800,400]);
+plot(time_log, dist_err_log,'r-','LineWidth',2);
+grid on;
+xlabel('时间 (s)','FontSize',12);
+ylabel('扰动估计误差','FontSize',12);
+title('USDE扰动观测器性能','FontSize',14);
+
+%% ========== 6. 保存结果 ==========
+outputDir = fullfile(currentDir, '..', 'outputs');
+if ~exist(outputDir,'dir'), mkdir(outputDir); end
+save(fullfile(outputDir,'sim_result.mat'),'time_log','pos_log','error_log','dist_err_log');
+
+disp('✅ 仿真完成！3张图像已自动弹出，结果保存到 outputs 文件夹');
