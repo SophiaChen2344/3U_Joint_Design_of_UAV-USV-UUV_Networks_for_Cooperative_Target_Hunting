@@ -1,4 +1,4 @@
-% 论文复现主脚本：1:1匹配Fig10-16所有结果（修复A矩阵作用域）
+% 论文复现主脚本：1:1匹配Fig10-16所有结果（修复legend Location错误）
 clear; clc; close all;
 
 %% ========== 强制加载所有函数 ==========
@@ -334,7 +334,7 @@ xticks(0:50:300);
 end
 
 function plot_error_curve(time, error, controller, axis_name, params)
-% Fig11-16：1:1复刻误差曲线
+% Fig11-16：1:1复刻误差曲线（修复legend Location错误）
 figure('Color','w','Position',[300,100,800,500]);
 hold on; grid on;
 
@@ -361,8 +361,8 @@ end
 % 论文刻度：-20~30
 ylim([-20, 30]);
 xticks(0:20:80);
-% 论文图例位置
-legend('Location','upper right');
+% 修复legend Location参数（upper right → northeast）
+legend(labels, 'Location', 'northeast');
 % 匹配论文网格样式
 grid on; grid minor;
 end
