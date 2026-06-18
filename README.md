@@ -1,51 +1,55 @@
-# Fixed-Time Networked UAV Topology Reconfiguration Reproduction
+# 3U UAV-USV-UUV Cooperative Target Hunting Reproduction
 
-This repository scaffolds a Python reproduction of the IEEE paper:
+This repository now includes a runnable reproduction scaffold for the IEEE TVT paper:
 
-`Fixed-Time Networked UAV Topology Reconfiguration With Disturbance Rejection via Deep Reinforcement Learning`
+`3U: Joint Design of UAV-USV-UUV Networks for Cooperative Target Hunting`
 
-Current implementation direction:
+The implementation focuses on the paper's simulation model:
 
-- MATLAB-first for all subsequent work
-- Fixed-topology formation control only
-- USDE disturbance estimation enabled
-- DDPG topology reconfiguration deferred
+- 3U system geometry: UAV, USV relay, and UUV cluster center
+- Energy-oriented target hunting objective
+- UAV-USV and USV-UUV connectivity metrics
+- Eight-direction UUV action space
+- DQN, Double DQN, Dueling DQN, and ACO-style baseline
+- CSV and SVG outputs for Fig. 2, Fig. 3, and Table II style comparisons
 
-The project is organized around the paper's mathematical modules:
+## Quick Start
 
-- UAV kinematics: Eq. (6)-(7)
-- USDE disturbance estimator: Eq. (8)-(11)
-- Formation error and graph model: Eq. (12)-(13), Eq. (32)-(33)
-- Fixed-time controller: Eq. (14)-(16), Eq. (34)
-- DDPG topology reconfiguration: Eq. (17)-(31)
-- Stability checks: Eq. (35)-(43)
+The local `python` on this machine currently has a broken NumPy install. The Codex bundled Python works:
 
-## MATLAB Quick Start
-
-```matlab
-cd('C:\Users\lenovo\Documents\New project\matlab')
-run_fixed_topology_main
+```powershell
+$py='C:\Users\lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
+& $py scripts\run_3u_reproduction.py --only smoke
 ```
 
-## Structure
+Small end-to-end run:
+
+```powershell
+& $py scripts\run_3u_reproduction.py --only all --episodes 300 --eval-episodes 30 --aco-populations 30 --aco-iterations 30
+```
+
+Paper-scale run:
+
+```powershell
+& $py scripts\run_3u_reproduction.py --only all --episodes 10000 --eval-episodes 100 --aco-populations 100 --aco-iterations 100
+```
+
+Outputs are written to:
 
 ```text
-matlab/      MATLAB entry script and modules for fixed-topology control
-configs/     archived parameter templates from earlier scaffold
-docs/        formula mappings and experiment notes
-scripts/     runnable entry points
-src/         source code modules
-outputs/     logs, figures, checkpoints
+outputs/3u_reproduction/
 ```
 
-## Current Scope
+## Key Files
 
-1. Implement and validate UAV dynamics and USDE in MATLAB.
-2. Implement fixed-time controller under a fixed topology.
-3. Reproduce the fixed-topology part of the paper before any topology switching.
-4. Add baselines only after the nominal fixed-topology controller is stable.
+```text
+src/three_u_repro/          3U simulation, DQN, ACO, metrics, plotting
+scripts/run_3u_reproduction.py
+configs/3u_default.json
+docs/3u_reproduction_notes.md
+```
 
 ## Notes
 
-- The Python scaffold remains in the repository, but it is no longer the active path.
-- The active workstream is under `matlab/`.
+- The previous fixed-time UAV topology scaffold is still present under `src/uav_repro/` and `matlab/`, but it is not the active path for this 3U paper.
+- The paper does not specify every constant required for exact numerical replication, so reproduction assumptions are listed in `docs/3u_reproduction_notes.md`.
