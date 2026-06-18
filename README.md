@@ -1,8 +1,14 @@
-# 3U UAV-USV-UUV Cooperative Target Hunting Reproduction
+# 3U_Joint_Design_of_UAV-USV-UUV_Networks_for_Cooperative_Target_Hunting
 
-This repository now includes a runnable reproduction scaffold for the IEEE TVT paper:
+This repository provides a runnable reproduction scaffold for the IEEE TVT paper:
 
 `3U: Joint Design of UAV-USV-UUV Networks for Cooperative Target Hunting`
+
+Canonical repository/file name:
+
+```text
+3U_Joint_Design_of_UAV-USV-UUV_Networks_for_Cooperative_Target_Hunting
+```
 
 The implementation focuses on the paper's simulation model:
 
@@ -43,10 +49,10 @@ outputs/3u_reproduction/
 ## Key Files
 
 ```text
-src/three_u_repro/          3U simulation, DQN, ACO, metrics, plotting
-scripts/run_3u_reproduction.py
-configs/3u_default.json
-docs/3u_reproduction_notes.md
+src/three_u_repro/                 3U simulation, DQN, ACO, metrics, plotting
+scripts/run_3u_reproduction.py     short runnable entry for the 3U paper
+configs/3u_default.json            paper Table I parameter defaults
+docs/3u_reproduction_notes.md      reproduction assumptions and equation map
 ```
 
 ## Notes

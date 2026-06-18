@@ -1,4 +1,4 @@
-# 3U Paper Reproduction Notes
+# 3U_Joint_Design_of_UAV-USV-UUV_Networks_for_Cooperative_Target_Hunting Reproduction Notes
 
 This project reproduces the simulation workflow for **“3U: Joint Design of UAV-USV-UUV Networks for Cooperative Target Hunting”** with a runnable Python implementation.
 
