@@ -36,5 +36,12 @@
   "usv_relay_fraction_to_uuv": 0.55,
   "acoustic_link_radius_m": 260.0,
   "em_link_scale_m": 260.0,
-  "underwater_link_scale_m": 180.0
+  "underwater_link_scale_m": 180.0,
+  "uav_transmit_power": 260.0,
+  "rayleigh_mean": 1.0,
+  "sinr_threshold": 1.0,
+  "noise_power": 1.0,
+  "expected_interference": 0.0,
+  "path_loss_exponent": 1.0,
+  "uav_usv_pc_min": 0.01
 }

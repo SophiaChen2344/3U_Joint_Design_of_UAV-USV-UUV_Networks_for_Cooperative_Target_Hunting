@@ -178,8 +178,7 @@ class DQNAgent:
         self.replay = ReplayBuffer(config.dqn_memory_capacity, self.py_rng)
 
     def select_action(self, state: np.ndarray, training: bool = True) -> int:
-        greedy_probability = self.config.dqn_paper_epsilon if training else 1.0
-        if self.py_rng.random() > greedy_probability:
+        if training and self.py_rng.random() < self.config.dqn_paper_epsilon:
             return self.py_rng.randrange(self.action_size)
         return int(np.argmax(self.online.predict(state)[0]))
 

@@ -8,6 +8,7 @@ from .config import PaperConfig
 from .physics import (
     ACTION_DIRECTIONS,
     clamp_xy,
+    energy_balance_gap,
     motion_energy_kj,
     norm,
     relay_target_xy,
@@ -27,6 +28,7 @@ class StepInfo:
     usv_uuv_distance_m: float
     pc: float
     delta_bar: float
+    energy_balance_gap: float
     success: bool
     constraint_ok: bool
 
@@ -40,7 +42,7 @@ class ThreeUEnvironment:
         self.config = config
         self.rng = np.random.default_rng(config.random_seed if seed is None else seed)
         self.uav_xy = np.array(config.uav_xy, dtype=np.float64)
-        self.state_size = 12
+        self.state_size = 15
         self.reset()
 
     def reset(
@@ -64,22 +66,26 @@ class ThreeUEnvironment:
 
     def observation(self) -> np.ndarray:
         config = self.config
-        scale = config.area_size
+        xy_scale = config.area_size
+        z_scale = max(abs(config.underwater_depth_m), config.h_max_m, 1.0)
         escape_direction = unit(self.target_xy - self.uuv_xy)
         return np.array(
             [
-                self.usv_xy[0] / scale,
-                self.usv_xy[1] / scale,
-                self.uuv_xy[0] / scale,
-                self.uuv_xy[1] / scale,
-                self.target_xy[0] / scale,
-                self.target_xy[1] / scale,
+                self.uav_xy[0] / xy_scale,
+                self.uav_xy[1] / xy_scale,
+                config.uav_height_m / z_scale,
+                self.usv_xy[0] / xy_scale,
+                self.usv_xy[1] / xy_scale,
+                0.0,
+                self.uuv_xy[0] / xy_scale,
+                self.uuv_xy[1] / xy_scale,
+                config.underwater_depth_m / z_scale,
+                self.target_xy[0] / xy_scale,
+                self.target_xy[1] / xy_scale,
+                config.underwater_depth_m / z_scale,
                 escape_direction[0],
                 escape_direction[1],
-                self.path_length_m / (2.0 * scale),
-                config.uav_height_m / config.h_max_m,
-                config.uuv_speed_kn / 30.0,
-                self.previous_distance_m / scale,
+                self.path_length_m / (2.0 * xy_scale),
             ],
             dtype=np.float64,
         )
@@ -91,11 +97,14 @@ class ThreeUEnvironment:
         uuv3 = np.array([self.uuv_xy[0], self.uuv_xy[1], config.underwater_depth_m], dtype=np.float64)
         pc = uav_usv_connectivity(self.uav_xy, self.usv_xy, config.uav_height_m, config)
         delta_bar = underwater_connectivity(self.usv_xy, self.uuv_xy, config)
+        balance_gap = energy_balance_gap(config)
         distance = norm(self.target_xy - self.uuv_xy)
         constraint_ok = (
             config.h_min_m <= config.uav_height_m <= config.h_max_m
             and distance <= uav_search_radius_m(config.uav_height_m, config)
+            and pc >= config.uav_usv_pc_min
             and delta_bar >= config.connectivity_c1
+            and balance_gap <= config.energy_balance_c2
         )
         return StepInfo(
             distance_m=distance,
@@ -105,6 +114,7 @@ class ThreeUEnvironment:
             usv_uuv_distance_m=norm(usv3 - uuv3),
             pc=pc,
             delta_bar=delta_bar,
+            energy_balance_gap=balance_gap,
             success=distance <= config.safe_radius_m,
             constraint_ok=constraint_ok,
         )

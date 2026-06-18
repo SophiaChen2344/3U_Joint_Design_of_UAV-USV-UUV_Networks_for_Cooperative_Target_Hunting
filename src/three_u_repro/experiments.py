@@ -10,6 +10,7 @@ import numpy as np
 from .agents import evaluate_agent, run_aco, summarize_results, train_dqn
 from .config import PaperConfig
 from .environment import ThreeUEnvironment
+from .physics import ACTION_DIRECTIONS
 
 
 def write_csv(path: Path, rows: list[dict[str, float | str]]) -> None:
@@ -136,25 +137,10 @@ def run_greedy_smoke(config: PaperConfig) -> dict[str, float]:
         info = env.metrics()
         while not done:
             direction = env.target_xy - env.uuv_xy
-            action = int(np.argmax(ACTION_DOT_CACHE @ (direction / max(np.linalg.norm(direction), 1e-12))))
+            action = int(np.argmax(ACTION_DIRECTIONS @ (direction / max(np.linalg.norm(direction), 1e-12))))
             _, _, done, info = env.step(action)
         results.append(info)
     return {
         "success_rate": float(sum(info.success for info in results) / len(results)),
         "mean_energy_kj": float(np.mean([info.energy_kj for info in results])),
     }
-
-
-ACTION_DOT_CACHE = np.array(
-    [
-        [1.0, 0.0],
-        [2**-0.5, 2**-0.5],
-        [0.0, 1.0],
-        [-2**-0.5, 2**-0.5],
-        [-1.0, 0.0],
-        [-2**-0.5, -2**-0.5],
-        [0.0, -1.0],
-        [2**-0.5, -2**-0.5],
-    ],
-    dtype=np.float64,
-)

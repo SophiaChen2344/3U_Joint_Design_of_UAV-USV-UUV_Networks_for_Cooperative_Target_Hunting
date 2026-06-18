@@ -60,6 +60,13 @@ class PaperConfig:
     acoustic_link_radius_m: float = 260.0
     em_link_scale_m: float = 260.0
     underwater_link_scale_m: float = 180.0
+    uav_transmit_power: float = 260.0
+    rayleigh_mean: float = 1.0
+    sinr_threshold: float = 1.0
+    noise_power: float = 1.0
+    expected_interference: float = 0.0
+    path_loss_exponent: float = 1.0
+    uav_usv_pc_min: float = 0.01
 
     @property
     def usv_speed_mps(self) -> float:
